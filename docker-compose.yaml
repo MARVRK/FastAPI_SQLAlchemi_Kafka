@@ -1,0 +1,115 @@
+version: '3.9'
+
+services:
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+
+
+  postgres_users:
+    image: postgres:latest
+    container_name: postgres_users
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER_USERS}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_USERS}
+      POSTGRES_DB: ${POSTGRES_DB_USERS}
+    ports:
+      - "5432:5432"
+    restart: always
+
+
+  postgres_products:
+    image: postgres:latest
+    container_name: postgres_products
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER_PRODUCTS}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_PRODUCTS}
+      POSTGRES_DB: ${POSTGRES_DB_PRODUCTS}
+    ports:
+      - "5433:5432"
+    restart: always
+
+
+  postgres_orders:
+    image: postgres:latest
+    container_name: postgres_orders
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER_ORDERS}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_ORDERS}
+      POSTGRES_DB: ${POSTGRES_DB_ORDERS}
+    ports:
+      - "5434:5432"
+    restart: always
+
+
+  redis:
+    image: redislabs/redismod
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+
+  api:
+    build:
+      context: .
+      target: builder
+    container_name: fastapi_app
+    depends_on:
+      - postgres_users
+      - postgres_products
+      - postgres_orders
+      - kafka
+      - redis
+    environment:
+      PORT: 8000
+
+
+      POSTGRES_USERS_HOST: postgres_users
+      POSTGRES_USERS_PORT: 5432
+      POSTGRES_USERS_DB: ${POSTGRES_DB_USERS}
+      POSTGRES_USERS_USER: ${POSTGRES_USER_USERS}
+      POSTGRES_USERS_PASSWORD: ${POSTGRES_PASSWORD_USERS}
+
+
+      POSTGRES_PRODUCTS_HOST: postgres_products
+      POSTGRES_PRODUCTS_PORT: 5432
+      POSTGRES_PRODUCTS_DB: ${POSTGRES_DB_PRODUCTS}
+      POSTGRES_PRODUCTS_USER: ${POSTGRES_USER_PRODUCTS}
+      POSTGRES_PRODUCTS_PASSWORD: ${POSTGRES_PASSWORD_PRODUCTS}
+
+
+      POSTGRES_ORDERS_HOST: postgres_orders
+      POSTGRES_ORDERS_PORT: 5432
+      POSTGRES_ORDERS_DB: ${POSTGRES_DB_ORDERS}
+      POSTGRES_ORDERS_USER: ${POSTGRES_USER_ORDERS}
+      POSTGRES_ORDERS_PASSWORD: ${POSTGRES_PASSWORD_ORDERS}
+
+
+      KAFKA_BROKER: kafka
+      KAFKA_PORT: 9092
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+    ports:
+      - "8000:8000"
+    restart: "no"
