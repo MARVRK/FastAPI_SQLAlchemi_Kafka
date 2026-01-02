@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
 
   zookeeper:
@@ -27,36 +25,42 @@ services:
 
 
   postgres_users:
-    image: postgres:latest
+    image: postgres:16
     container_name: postgres_users
     environment:
       POSTGRES_USER: ${POSTGRES_USER_USERS}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_USERS}
       POSTGRES_DB: ${POSTGRES_DB_USERS}
+    volumes:
+      - ./pg_users:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     restart: always
 
 
   postgres_products:
-    image: postgres:latest
+    image: postgres:16
     container_name: postgres_products
     environment:
       POSTGRES_USER: ${POSTGRES_USER_PRODUCTS}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_PRODUCTS}
       POSTGRES_DB: ${POSTGRES_DB_PRODUCTS}
+    volumes:
+      - ./pg_products:/var/lib/postgresql/data
     ports:
       - "5433:5432"
     restart: always
 
 
   postgres_orders:
-    image: postgres:latest
+    image: postgres:16
     container_name: postgres_orders
     environment:
       POSTGRES_USER: ${POSTGRES_USER_ORDERS}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_ORDERS}
       POSTGRES_DB: ${POSTGRES_DB_ORDERS}
+    volumes:
+      - ./pg_orders:/var/lib/postgresql/data
     ports:
       - "5434:5432"
     restart: always
@@ -69,47 +73,72 @@ services:
       - "6379:6379"
 
 
-  api:
+  api_user:
     build:
       context: .
-      target: builder
-    container_name: fastapi_app
+    container_name: api_user
+    command: uvicorn app.user.main:app --host 0.0.0.0 --port ${USER_PORT}
     depends_on:
       - postgres_users
-      - postgres_products
-      - postgres_orders
       - kafka
       - redis
     environment:
-      PORT: 8000
-
-
       POSTGRES_USERS_HOST: postgres_users
       POSTGRES_USERS_PORT: 5432
       POSTGRES_USERS_DB: ${POSTGRES_DB_USERS}
       POSTGRES_USERS_USER: ${POSTGRES_USER_USERS}
       POSTGRES_USERS_PASSWORD: ${POSTGRES_PASSWORD_USERS}
 
+      KAFKA_BROKER: ${KAFKA_URL}
+      REDIS_HOST: ${REDIS_URL}
 
+    ports:
+      - "8000:8000"
+    restart: "on-failure"
+
+  api_product:
+    build:
+      context: .
+    container_name: api_product
+    command: uvicorn app.product.main:app --host 0.0.0.0 --port ${PRODUCT_PORT}
+    depends_on:
+      - postgres_products
+      - kafka
+      - redis
+    environment:
       POSTGRES_PRODUCTS_HOST: postgres_products
       POSTGRES_PRODUCTS_PORT: 5432
       POSTGRES_PRODUCTS_DB: ${POSTGRES_DB_PRODUCTS}
       POSTGRES_PRODUCTS_USER: ${POSTGRES_USER_PRODUCTS}
       POSTGRES_PRODUCTS_PASSWORD: ${POSTGRES_PASSWORD_PRODUCTS}
 
+      KAFKA_BROKER: ${KAFKA_URL}
+      REDIS_HOST: ${REDIS_URL}
 
+
+    ports:
+      - "8001:8001"
+    restart: "on-failure"
+
+  api_order:
+    build:
+      context: .
+    container_name: api_order
+    command: uvicorn app.order.main:app --host 0.0.0.0 --port ${ORDER_PORT}
+    depends_on:
+      - postgres_orders
+      - kafka
+      - redis
+    environment:
       POSTGRES_ORDERS_HOST: postgres_orders
       POSTGRES_ORDERS_PORT: 5432
       POSTGRES_ORDERS_DB: ${POSTGRES_DB_ORDERS}
       POSTGRES_ORDERS_USER: ${POSTGRES_USER_ORDERS}
       POSTGRES_ORDERS_PASSWORD: ${POSTGRES_PASSWORD_ORDERS}
 
-
-      KAFKA_BROKER: kafka
-      KAFKA_PORT: 9092
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      KAFKA_BROKER: ${KAFKA_URL}
+      REDIS_HOST: ${REDIS_URL}
 
     ports:
-      - "8000:8000"
-    restart: "no"
+      - "8002:8002"
+    restart: "on-failure"
