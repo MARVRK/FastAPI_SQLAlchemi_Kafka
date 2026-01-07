@@ -32,7 +32,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_USERS}
       POSTGRES_DB: ${POSTGRES_DB_USERS}
     volumes:
-      - ./pg_users:/var/lib/postgresql/data
+      - ./user/pg_users:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     restart: always
@@ -46,7 +46,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_PRODUCTS}
       POSTGRES_DB: ${POSTGRES_DB_PRODUCTS}
     volumes:
-      - ./pg_products:/var/lib/postgresql/data
+      - ./product/pg_products:/var/lib/postgresql/data
     ports:
       - "5433:5432"
     restart: always
@@ -60,7 +60,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_ORDERS}
       POSTGRES_DB: ${POSTGRES_DB_ORDERS}
     volumes:
-      - ./pg_orders:/var/lib/postgresql/data
+      - ./order/pg_orders:/var/lib/postgresql/data
     ports:
       - "5434:5432"
     restart: always
@@ -75,9 +75,9 @@ services:
 
   api_user:
     build:
-      context: .
+      context: ./user
     container_name: api_user
-    command: uvicorn app.user.main:app --host 0.0.0.0 --port ${USER_PORT}
+    command: uv run uvicorn main:app --host 0.0.0.0 --port ${USER_PORT}
     depends_on:
       - postgres_users
       - kafka
@@ -98,9 +98,9 @@ services:
 
   api_product:
     build:
-      context: .
+      context: ./product
     container_name: api_product
-    command: uvicorn app.product.main:app --host 0.0.0.0 --port ${PRODUCT_PORT}
+    command: uv run uvicorn main:app --host 0.0.0.0 --port ${PRODUCT_PORT}
     depends_on:
       - postgres_products
       - kafka
@@ -122,9 +122,9 @@ services:
 
   api_order:
     build:
-      context: .
+      context: ./order
     container_name: api_order
-    command: uvicorn app.order.main:app --host 0.0.0.0 --port ${ORDER_PORT}
+    command: uv run uvicorn main:app --host 0.0.0.0 --port ${ORDER_PORT}
     depends_on:
       - postgres_orders
       - kafka

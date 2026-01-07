@@ -2,3 +2,9 @@
 .venv
 .idea
 .python-version
+order/pg_orders
+product/pg_products
+user/pg_users
+order/.venv
+user/.venv
+product/.venv
