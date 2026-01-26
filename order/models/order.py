@@ -1,6 +1,6 @@
 from typing import List
 from sqlalchemy import Integer, String, UUID, ForeignKey
-from order.infra.Base import Base
+from order.infra.base import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 class Order(Base):
