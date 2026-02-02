@@ -13,7 +13,6 @@ class Order(Base):
 	status: Mapped[str] = mapped_column(String(20))
 	total_price: Mapped[int] = mapped_column(nullable=False, default=0)
 
-
 class ProductsInOrder(Base):
 	__tablename__ = "products_in_order"
 

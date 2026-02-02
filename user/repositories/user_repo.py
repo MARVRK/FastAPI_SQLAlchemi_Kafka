@@ -5,17 +5,17 @@ from user.models.user import User
 
 class UserAbstraction (ABC):
 	@abstractmethod
-	def get_user (self, user_id: int) -> User:
+	async def get_user (self, user_id: int) -> User:
 		pass
 
 	@abstractmethod
-	def create_user (self, user_email: str) -> User:
+	async def create_user (self, user_email: str) -> User:
 		pass
 
 	@abstractmethod
-	def delete_user (self, user_id: int) -> Dict[str, int]:
+	async def delete_user (self, user_id: int) -> Dict[str, int]:
 		pass
 
 	@abstractmethod
-	def update_user (self, user_id: int)-> User:
+	async def update_user (self, user_id: int)-> User:
 		pass

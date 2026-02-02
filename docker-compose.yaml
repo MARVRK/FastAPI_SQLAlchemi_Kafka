@@ -24,9 +24,18 @@ services:
       - "9092:9092"
 
 
+  redis:
+    image: redislabs/redismod
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+
   postgres_users:
     image: postgres:16
     container_name: postgres_users
+    env_file:
+      - .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER_USERS}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_USERS}
@@ -41,6 +50,8 @@ services:
   postgres_products:
     image: postgres:16
     container_name: postgres_products
+    env_file:
+      - .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER_PRODUCTS}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_PRODUCTS}
@@ -55,6 +66,8 @@ services:
   postgres_orders:
     image: postgres:16
     container_name: postgres_orders
+    env_file:
+      - .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER_ORDERS}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_ORDERS}
@@ -66,79 +79,76 @@ services:
     restart: always
 
 
-  redis:
-    image: redislabs/redismod
-    container_name: redis
-    ports:
-      - "6379:6379"
-
-
   api_user:
     build:
       context: ./user
     container_name: api_user
-    command: uv run uvicorn main:app --host 0.0.0.0 --port ${USER_PORT}
     depends_on:
       - postgres_users
       - kafka
       - redis
+    env_file:
+      - .env
     environment:
-      POSTGRES_USERS_HOST: postgres_users
-      POSTGRES_USERS_PORT: 5432
-      POSTGRES_USERS_DB: ${POSTGRES_DB_USERS}
-      POSTGRES_USERS_USER: ${POSTGRES_USER_USERS}
-      POSTGRES_USERS_PASSWORD: ${POSTGRES_PASSWORD_USERS}
+      POSTGRES_USERS_HOST: ${POSTGRES_USERS_HOST}
+      POSTGRES_USERS_PORT: ${POSTGRES_USERS_PORT}
+      POSTGRES_DB_USERS: ${POSTGRES_DB_USERS}
+      POSTGRES_USER_USERS: ${POSTGRES_USER_USERS}
+      POSTGRES_PASSWORD_USERS: ${POSTGRES_PASSWORD_USERS}
 
       KAFKA_BROKER: ${KAFKA_URL}
       REDIS_HOST: ${REDIS_URL}
-
+    command: /user/.venv/bin/uvicorn main:app --host 0.0.0.0 --port ${USER_PORT}
     ports:
       - "8000:8000"
-    restart: "on-failure"
+    restart: on-failure
+
 
   api_product:
     build:
       context: ./product
     container_name: api_product
-    command: uv run uvicorn main:app --host 0.0.0.0 --port ${PRODUCT_PORT}
     depends_on:
       - postgres_products
       - kafka
       - redis
+    env_file:
+      - .env
     environment:
-      POSTGRES_PRODUCTS_HOST: postgres_products
-      POSTGRES_PRODUCTS_PORT: 5432
-      POSTGRES_PRODUCTS_DB: ${POSTGRES_DB_PRODUCTS}
-      POSTGRES_PRODUCTS_USER: ${POSTGRES_USER_PRODUCTS}
-      POSTGRES_PRODUCTS_PASSWORD: ${POSTGRES_PASSWORD_PRODUCTS}
+      POSTGRES_PRODUCTS_HOST: ${POSTGRES_PRODUCTS_HOST}
+      POSTGRES_PRODUCTS_PORT: ${POSTGRES_PRODUCTS_PORT}
+      POSTGRES_DB_PRODUCTS: ${POSTGRES_DB_PRODUCTS}
+      POSTGRES_USER_PRODUCTS: ${POSTGRES_USER_PRODUCTS}
+      POSTGRES_PASSWORD_PRODUCTS: ${POSTGRES_PASSWORD_PRODUCTS}
 
       KAFKA_BROKER: ${KAFKA_URL}
       REDIS_HOST: ${REDIS_URL}
-
-
+    command: /product/.venv/bin/uvicorn main:app --host 0.0.0.0 --port ${PRODUCT_PORT}
     ports:
       - "8001:8001"
-    restart: "on-failure"
+    restart: on-failure
+
 
   api_order:
     build:
       context: ./order
     container_name: api_order
-    command: uv run uvicorn main:app --host 0.0.0.0 --port ${ORDER_PORT}
     depends_on:
       - postgres_orders
       - kafka
       - redis
+    env_file:
+      - .env
     environment:
-      POSTGRES_ORDERS_HOST: postgres_orders
-      POSTGRES_ORDERS_PORT: 5432
-      POSTGRES_ORDERS_DB: ${POSTGRES_DB_ORDERS}
-      POSTGRES_ORDERS_USER: ${POSTGRES_USER_ORDERS}
-      POSTGRES_ORDERS_PASSWORD: ${POSTGRES_PASSWORD_ORDERS}
+      POSTGRES_ORDERS_HOST: ${POSTGRES_ORDERS_HOST}
+      POSTGRES_ORDERS_PORT: ${POSTGRES_ORDERS_PORT}
+      POSTGRES_DB_ORDERS: ${POSTGRES_DB_ORDERS}
+      POSTGRES_USER_ORDERS: ${POSTGRES_USER_ORDERS}
+      POSTGRES_PASSWORD_ORDERS: ${POSTGRES_PASSWORD_ORDERS}
 
       KAFKA_BROKER: ${KAFKA_URL}
       REDIS_HOST: ${REDIS_URL}
-
+    command: /order/.venv/bin/uvicorn main:app --host 0.0.0.0 --port ${ORDER_PORT}
     ports:
       - "8002:8002"
-    restart: "on-failure"
+    restart: on-failure
