@@ -16,10 +16,6 @@ RUN pip install "uv[all]" "uvicorn[standard]"
 # рабочая директория внутри контейнера
 WORKDIR /user
 
-# копируем только lock-файлы, ставим зависимости через uv
-COPY pyproject.toml uv.lock* ./
-RUN uv sync --locked --all-extras
-
 COPY . .
 
 ENV PYTHONUNBUFFERED=1
