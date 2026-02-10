@@ -35,7 +35,7 @@ services:
     image: postgres:16
     container_name: postgres_users
     env_file:
-      - .env
+      - .env.docker
     environment:
       POSTGRES_USER: ${POSTGRES_USER_USERS}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_USERS}
@@ -51,7 +51,7 @@ services:
     image: postgres:16
     container_name: postgres_products
     env_file:
-      - .env
+      - .env.docker
     environment:
       POSTGRES_USER: ${POSTGRES_USER_PRODUCTS}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_PRODUCTS}
@@ -67,7 +67,7 @@ services:
     image: postgres:16
     container_name: postgres_orders
     env_file:
-      - .env
+      - .env.docker
     environment:
       POSTGRES_USER: ${POSTGRES_USER_ORDERS}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_ORDERS}
@@ -88,7 +88,7 @@ services:
       - kafka
       - redis
     env_file:
-      - .env
+      - .env.docker
     environment:
       POSTGRES_USERS_HOST: ${POSTGRES_USERS_HOST}
       POSTGRES_USERS_PORT: ${POSTGRES_USERS_PORT}
@@ -113,7 +113,7 @@ services:
       - kafka
       - redis
     env_file:
-      - .env
+      - .env.docker
     environment:
       POSTGRES_PRODUCTS_HOST: ${POSTGRES_PRODUCTS_HOST}
       POSTGRES_PRODUCTS_PORT: ${POSTGRES_PRODUCTS_PORT}
@@ -138,7 +138,7 @@ services:
       - kafka
       - redis
     env_file:
-      - .env
+      - .env.docker
     environment:
       POSTGRES_ORDERS_HOST: ${POSTGRES_ORDERS_HOST}
       POSTGRES_ORDERS_PORT: ${POSTGRES_ORDERS_PORT}

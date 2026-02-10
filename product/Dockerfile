@@ -12,8 +12,8 @@ RUN bash /tmp/install_uv.sh && rm /tmp/install_uv.sh
 # рабочая директория внутри контейнера (создается)
 WORKDIR /product
 
-# копируем только lock-файлы, ставим зависимости через uv
-COPY pyproject.toml uv.lock
+# копируем c указанной директории только lock-файлы, ставим зависимости через uv
+COPY pyproject.toml uv.lock /product/
 
 # глобально ставим uvicorn и uv чтобы compose видел его
 # ставим зависимости через uv
@@ -28,7 +28,7 @@ ENV PYTHONUNBUFFERED=1
 
 # копируем энтрипонт и даем ему права на установку
 COPY entrypoint.sh /entrypoint.sh
-RUN cmod +x /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
 

@@ -12,8 +12,8 @@ RUN bash /tmp/install_uv.sh && rm /tmp/install_uv.sh
 # рабочая директория внутри контейнера (создается)
 WORKDIR /user
 
-# копируем только lock-файлы, ставим зависимости через uv
-COPY pyproject.toml uv.lock
+# копируем c указанной директории только lock-файлы, ставим зависимости через uv
+COPY pyproject.toml uv.lock /user/
 
 # глобально ставим uvicorn и uv чтобы compose видел его
 # ставим зависимости через uv
@@ -32,4 +32,4 @@ RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8002"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
