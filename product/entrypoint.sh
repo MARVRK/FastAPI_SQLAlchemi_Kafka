@@ -11,7 +11,7 @@ until pg_isready -h "$POSTGRES_PRODUCTS_HOST" \
     sleep 1
 done
 
-echo "Postgres_PRODUCTS is ready, running migrations... by uv in virtual env"
+echo  "Postgres_ORDERS is ready, running migrations... by virtual env and alembic"
 
 
 # теперь запускаем Alembic через бинарник из виртуалки для миграции
