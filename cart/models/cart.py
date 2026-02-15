@@ -1,7 +1,7 @@
 import datetime
 from typing import List
 from sqlalchemy import Integer,ForeignKey, DateTime, func, UniqueConstraint
-from order.infra.base import Base
+from cart.infra.base import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
