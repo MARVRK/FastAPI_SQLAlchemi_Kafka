@@ -13,7 +13,7 @@ RUN bash /tmp/install_uv.sh && rm /tmp/install_uv.sh
 WORKDIR /cart
 
 # копируем c указанной директории только lock-файлы, ставим зависимости через uv
-COPY pyproject.toml uv.lock /order/
+COPY pyproject.toml uv.lock /cart/
 
 # глобально ставим uvicorn и uv чтобы compose видел его
 # ставим зависимости через uv
