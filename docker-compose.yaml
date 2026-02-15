@@ -79,6 +79,22 @@ services:
     restart: always
 
 
+  postgres_cart:
+    image: postgres:16
+    container_name: postgres_cart
+    env_file:
+      - .env.docker
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER_CART}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_CART}
+      POSTGRES_DB: ${POSTGRES_DB_CART}
+    volumes:
+      - ./cart/pg_cart:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+    restart: always
+
+
   api_user:
     build:
       context: ./user
@@ -152,3 +168,28 @@ services:
     ports:
       - "8002:8002"
     restart: on-failure
+
+  api_cart:
+    build:
+      context: ./cart
+    container_name: api_cart
+    depends_on:
+      - postgres_cart
+      - kafka
+      - redis
+    env_file:
+      - .env.docker
+    environment:
+      POSTGRES_CART_HOST: ${POSTGRES_CART_HOST}
+      POSTGRES_CART_PORT: ${POSTGRES_CART_PORT}
+      POSTGRES_DB_CART: ${POSTGRES_DB_CART}
+      POSTGRES_USER_CART: ${POSTGRES_USER_CART}
+      POSTGRES_PASSWORD_CART: ${POSTGRES_PASSWORD_CART}
+
+      KAFKA_BROKER: ${KAFKA_URL}
+      REDIS_HOST: ${REDIS_URL}
+    command: /cart/.venv/bin/uvicorn main:app --host 0.0.0.0 --port ${CART_PORT}
+    ports:
+      - "8003:8003"
+    restart: on-failure
+

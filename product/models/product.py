@@ -6,5 +6,5 @@ class Product(Base):
 	__tablename__ = "product"
 
 	id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-	product: Mapped[str] = mapped_column(String(length=50))
+	product: Mapped[str] = mapped_column(String(length=50), unique=True)
 	available_amount: Mapped[int] = mapped_column(Integer,default=0)

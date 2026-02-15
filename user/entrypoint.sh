@@ -15,7 +15,7 @@ echo  "Postgres_ORDERS is ready, running migrations... by virtual env and alembi
 
 
 # теперь запускаем Alembic через бинарник из виртуалки для миграции
-/users/.venv/bin/alembic upgrade head
+/user/.venv/bin/alembic upgrade head
 
 echo "Starting API USERS..."
 exec "$@"

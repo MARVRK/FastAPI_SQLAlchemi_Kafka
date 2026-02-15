@@ -3,7 +3,7 @@ from logging.config import fileConfig
 from pathlib import Path
 import sys
 
-BASE_DIR=Path(__file__).resolve().parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(BASE_DIR))
 
 from sqlalchemy import pool
@@ -11,8 +11,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from product.infra.settings import settings
 from product.infra.base import Base
-from product.models.product import Product
-
+from product.models.product import *
 
 from alembic import context
 
