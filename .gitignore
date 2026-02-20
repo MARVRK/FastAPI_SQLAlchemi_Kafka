@@ -6,6 +6,7 @@
 order/pg_orders
 product/pg_products
 user/pg_users
+cart/pg_cart
 order/.venv
 user/.venv
 product/.venv

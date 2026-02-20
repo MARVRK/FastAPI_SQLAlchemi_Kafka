@@ -1,5 +1,4 @@
-from typing import List
-
+from typing import List, Dict
 from sqlalchemy import func
 from sqlalchemy.orm import selectinload
 from abc import ABC, abstractmethod
@@ -15,47 +14,52 @@ class CartAbstraction (ABC):
 		pass
 
 	@abstractmethod
-	async def create_cart (self, customer_id: int, db: AsyncSession, details: List[CartDetail]) -> Cart:
+	async def create_cart (self, customer_id: int, db: AsyncSession, details: List[CartDetail] | None) -> Cart:
 		pass
 
 	@abstractmethod
-	async def delete_cart (self, cart_id: int) -> Cart:
+	async def delete_cart (self, cart_id: int, db: AsyncSession) -> Dict[str, str]:
 		pass
 
 	@abstractmethod
-	async def update_cart (self, cart_id) -> Cart | None:
+	async def update_cart (self, cart_id, db: AsyncSession) -> Cart | None:
 		pass
 
 class CartRepository (CartAbstraction):
 	@classmethod
 	async def get_cart (cls, cart_id: int, db: AsyncSession) -> Cart | None:
-		result = await db.scalars (select (Cart).where (Cart.id == cart_id).options (selectinload (Cart.details)))
-		cart = result.first ()
+		result = await db.scalars(select(Cart).where(Cart.id == cart_id).options(selectinload(Cart.details)))
+		cart = result.first()
 		if not cart:
 			return None
-		return Cart(id=cart.id,
-		            customer_id=cart.customer_id,
-		            details=cart.details)
+		return Cart (id=cart.id, customer_id=cart.customer_id, details=cart.details)
 
 	@classmethod
-	async def create_cart (cls, customer_id: int, db: AsyncSession, details: List[CartDetail]):
+	async def create_cart (cls, customer_id: int, db: AsyncSession, details: List[CartDetail] | None) -> None:
 		if details is None:
 			await db.rollback ()
 			raise "At least one product should be selected!!!"
-		new_cart = Cart (customer_id=customer_id, updated_at=func.now (), details=[])
+		new_cart = Cart (customer_id=customer_id, updated_at=func.now (), details=details)
+
 		db.add (new_cart)
 		await db.commit ()  ##### remove it later service logic based from Medium Article
-
-	async def delete_cart (self):
-		pass
+	@classmethod
+	async def delete_cart (cls, card_id: int, db: AsyncSession) -> Dict[str, str] | None:
+		cart = await db.scalar(select(Cart).where(Cart.id == card_id))
+		if cart is None:
+			return None
+		await db.delete(cart)
+		await db.commit()   ##### remove it later service logic based from Medium Article
+		return {"DB_CART": f"Cart with id {card_id} was deleted from DB"}
 
 	async def update_cart (self):
 		pass
 
 async def main ():
 	async with session_manager.session () as db:
-		# await CartRepository.create_cart (customer_id=1, db=db, details=[])
-		cp = await CartRepository.get_cart (cart_id=3, db=db)
-		print (cp.id, cp.details, cp.customer_id)
+		# await CartRepository.create_cart (customer_id=1, db=db, details=[CartDetail(product_id=1,quantity=5)])
+		# print(await CartRepository.get_cart (cart_id=26, db=db))
+		print(await CartRepository.delete_cart(card_id=26, db=db))
+
 
 asyncio.run (main ())
