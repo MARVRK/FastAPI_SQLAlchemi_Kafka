@@ -1,0 +1,16 @@
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from user.infra.settings import settings
+
+engine=create_async_engine(url=settings.PG_CONNECTION_USERS)
+SessionLocal=async_sessionmaker(bind=engine)
+
+def get_db():
+	db = SessionLocal()
+	try:
+		yield db
+	finally:
+		db.close()
+
+class Base(DeclarativeBase):
+	pass

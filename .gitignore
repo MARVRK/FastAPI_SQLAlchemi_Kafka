@@ -1,0 +1,14 @@
+.env.docker
+.env.local
+.venv
+.idea
+.python-version
+order/pg_orders
+product/pg_products
+user/pg_users
+cart/pg_cart
+order/.venv
+user/.venv
+product/.venv
+__pycache__/
+*.pyc
