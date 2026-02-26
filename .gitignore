@@ -15,6 +15,6 @@ cart/pg_cart
 order/.venv
 user/.venv
 product/.venv
-__pycache__/
 *.pyc
->>>>>>> 2a0205b (Updated project clean version)
+__pycache__/
+uv.lock
