@@ -1,80 +1,118 @@
-from typing import List, Dict, Type
+from typing import Dict
 from sqlalchemy import func
-from sqlalchemy.orm import selectinload
 from abc import ABC, abstractmethod
+
+from cart.error.error import CartError
 from cart.models.cart import Cart, CartDetail
 from cart.infra.base import session_manager
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import selectinload
+from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
 import asyncio
 
 class CartAbstraction (ABC):
 	@abstractmethod
-	async def get_cart (self, cart_id: int, db: AsyncSession) -> Type[Cart] | None:
+	async def get_cart (self, cart_id: int, db: AsyncSession) -> Cart | None:
 		pass
 
 	@abstractmethod
-	async def save_cart (self, customer_id: int, db: AsyncSession, details: List[CartDetail] | None) -> Type[Cart]:
+	async def save_update_cart (self, cart: Cart, db: AsyncSession | None) -> Cart.id:
 		pass
 
 	@abstractmethod
-	async def delete_cart (self, cart_id: int, db: AsyncSession) -> Dict[str, str]:
-		pass
-
-	@abstractmethod
-	async def update_cart (self, cart: Cart, product_id: int, new_quatity: int, db: AsyncSession) -> Cart | None:
+	async def delete_cart (self, cart_id: int, db: AsyncSession) -> None | Dict[str, str]:
 		pass
 
 class CartRepository (CartAbstraction):
 	@classmethod
-	async def get_cart (cls, cart_id: int, db: AsyncSession) -> Type[Cart] | None:
-		cart = await db.get(entity=Cart,ident=cart_id)
-		if not cart:
+	async def get_cart (cls, cart_id: int, db: AsyncSession) -> Cart | None:
+		'''
+		SQL Request:
+		This is request to table -> Cart
+		SELECT cart_table.id, cart_table.customer_id, cart_table.created_at, cart_table.updated_at
+		WHERE cart_table.id = $1::INTEGER
+
+		This is request to table -> CartDetail
+		SELECT cart_detail_table.cart_id AS cart_detail_table_cart_id,
+			   cart_detail_table.id AS cart_detail_table_id,
+			   cart_detail_table.created_at AS cart_detail_table_created_at,
+			   cart_detail_table.product_id AS cart_detail_table_product_id,
+			   cart_detail_table.quantity AS cart_detail_table_quantity
+		FROM cart_detail_table
+		WHERE cart_detail_table.cart_id IN ($1::INTEGER)
+		'''
+		if not cart_id:
 			return None
-		return cart
+		cart_stmt = select(Cart).options(selectinload(Cart.details)).where(Cart.id == cart_id)
+		cart = await db.execute (cart_stmt)
+		return cart.scalar_one_or_none()
 
 	@classmethod
-	async def save_cart (cls, customer_id: int, db: AsyncSession, details: List[CartDetail] | None) -> Cart:
-		if details is None:
-			raise ValueError ("At least one product should be selected!!!") ### replace with class of errors
+	async def save_update_cart (cls, cart: Cart, db: AsyncSession) -> Cart.id :
+		'''
+		SQL Request:
+		This is request to table -> Cart
+		INSERT INTO cart_table (customer_id, updated_at) VALUES ($1::INTEGER, now()) ON CONFLICT ON CONSTRAINT cart_table_unique_customer_id DO UPDATE SET updated_at = now() RETURNING cart_table.id
+		ON CONFLICT ON CONSTRAINT cart_table_unique_customer_id
+		DO UPDATE SET updated_at = now() RETURNING cart_table.id
 
+		This is request to table -> CartDetail
+		INSERT INTO cart_detail_table (cart_id, product_id, quantity) VALUES ($1::INTEGER, $2::INTEGER, $3::INTEGER)
+		ON CONFLICT ON CONSTRAINT cart_detail_cart_product_id DO UPDATE SET quantity = $4::INTEGER
+		RETURNING cart_detail_table.id
+		'''
+
+		if not cart.details:
+			raise CartError("At least one product should be selected")
 		try:
-			new_cart = Cart (customer_id=customer_id, updated_at=func.now (), details=details)
-			db.add (new_cart)
-			await db.commit ()  ##### remove it later service logic based from Medium Article
-			return new_cart
-		except BaseException as e:
-			return {"DB_CART": f"Error from db as {e}"}  ### replace with class of errors
+			cart_stmt = insert (Cart).values (customer_id=cart.customer_id,
+			                                  updated_at=cart.updated_at)
+			cart_stmt = (cart_stmt.on_conflict_do_update(constraint="cart_table_unique_customer_id",
+			                                            set_=dict(updated_at = func.now())).
+			                                            returning(Cart.id))
+			result = await db.execute (cart_stmt)
+			card_id_form_result = result.scalar_one() # getting id of updated or new created card.id
+
+			# inserting or updating in CartDetails products
+			for data in cart.details:
+				data_stmt = insert(CartDetail).values(
+							cart_id=card_id_form_result,
+							product_id=data.product_id,
+							quantity=data.quantity).on_conflict_do_update(constraint="cart_detail_cart_product_id",
+				                                                          set_=dict(quantity=data.quantity))
+				await db.execute(data_stmt)
+			await db.commit ()
+			return card_id_form_result
+		except IntegrityError as error:
+			print(error)
+			raise CartError(f"Failed to save/update cart", original_exception=error)
 
 	@classmethod
-	async def delete_cart (cls, cart: Cart, db: AsyncSession) ->  None:
+	async def delete_cart (cls, cart: Cart, db: AsyncSession) -> None | Dict[str,str]:
+		'''
+		SQL Request:
+		DELETE FROM cart_table WHERE cart_table.id = $1::INTEGER
+		Cascade delete method was enabled in models.cart
+		'''
 		if cart is None:
 			return None
-		await db.delete(cart)
+		cart_stmt = delete(Cart).where(Cart.id == cart.id)
+		await db.execute(cart_stmt)
 		await db.commit ()  ##### remove it later service logic based from Medium Article
-		return {"DB_CART": f"Cart with id {Cart.id} was deleted from DB"}  ### replace with class of errors
-
-	@classmethod
-	async def update_cart (cls, cart: Type[Cart], product_id: int, new_quatity: int, db: AsyncSession) -> Dict[str, str] | None:
-		if cart is None:
-			return None
-
-		pointer = next((k for k in cart.details if k.product_id == product_id), None)
-		if pointer is None:
-			raise ValueError (f"There is no product_id {product_id} in CartDetail!!!")
-
-		cart.updated_at = func.now ()
-		pointer.quantity = new_quatity
-		await db.commit ()  ##### remove it later service logic based from Medium Article
-		return {"DB_CART": f"Cart with id {29}, was successfully updated"}  ### replace with class of errors
+		return {"DB_CART": f"Cart with id {cart.id} was deleted from DB"}  ### replace with class of errors
 
 async def main ():
 	async with session_manager.session () as db:
-		# await CartRepository.save_cart (customer_id=1, db=db, details=[CartDetail (product_id=86, quantity=900), CartDetail (product_id=87,
-		#                                                                                                                        quantity=700)])  #
-		get_cart= await CartRepository.get_cart (cart_id=7, db=db)
+		await CartRepository.save_update_cart (cart=Cart (
+		                                                  customer_id=0,
+														  updated_at=func.now(),
+		                                                  details=[CartDetail(cart_id=11, product_id=888,quantity=333),
+																   CartDetail(cart_id=22, product_id=2,quantity=333)]),db = db)
 
-		await CartRepository.update_cart (cart=get_cart, product_id=5, new_quatity=333333, db=db)
-		# print(await CartRepository.delete_cart(cart=get_cart, db=db))
+		# get_cart= await CartRepository.get_cart (cart_id=3, db=db)
+		# print(get_cart.details)
+		# await CartRepository.delete_cart(cart=get_cart, db=db)
 
 asyncio.run (main ())

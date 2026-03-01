@@ -6,15 +6,11 @@
 order/pg_orders
 product/pg_products
 user/pg_users
-<<<<<<< HEAD
-order/.venv
-user/.venv
-product/.venv
-=======
 cart/pg_cart
 order/.venv
 user/.venv
 product/.venv
+cart/.venv
 *.pyc
 __pycache__/
 uv.lock

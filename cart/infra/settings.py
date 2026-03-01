@@ -9,4 +9,3 @@ class Settings(BaseSettings):
 	PG_CONNECTION_CART :str
 
 settings = Settings()
-
