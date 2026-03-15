@@ -11,6 +11,8 @@ order/.venv
 user/.venv
 product/.venv
 cart/.venv
+order/repositories/errors.log
+order/repositories/order_repo.log
 *.pyc
 __pycache__/
 uv.lock

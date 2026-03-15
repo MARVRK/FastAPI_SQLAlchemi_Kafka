@@ -2,24 +2,25 @@ from contextlib import asynccontextmanager
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from cart.infra.settings import settings
+from cart.error.error import CartError
 
 class Base(DeclarativeBase):
 	pass
 class DBSessionConfig:
 	def __init__(self, db_url: str):
-		self._engine = create_async_engine(url=db_url, echo=True)
-		self._sessionmaker = async_sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=True)
+		if not db_url:
+			raise CartError(message="DBSessionConfig was not established or None")
+		self._engine = create_async_engine(url=db_url, echo=False)
+		self._sessionmaker = async_sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
+
 	@asynccontextmanager
 	async def session(self):
-		if self._engine is None:
-			raise Exception("DBSessionConfig is not established!")
-
 		session = self._sessionmaker()
 		try:
 			yield session
-		except Exception as e:
+		except Exception as error:
 			await session.rollback()
-			raise e
+			raise CartError(message="DB_Session_Manager error", original_exception=error)
 		finally:
 			await session.close()
 
