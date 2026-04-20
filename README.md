@@ -9,6 +9,8 @@ This project demonstrates a production-style backend architecture
 where services are independently deployable, communicate asynchronously
 via Kafka, and each own their own database schema.
 
+![img.png](C4 Scheme.png)
+
 ## Services
 
 | Service   | Responsibility                                          |
@@ -30,18 +32,6 @@ via Kafka, and each own their own database schema.
 | Infrastructure | Docker, Docker Compose            |
 | Scripts        | Shell — automated migration runner|
 
-## Project Structure
-```
-├── user/
-│   ├── models.py
-│   ├── router.py
-│   └── schemas.py
-├── product/
-├── cart/
-├── order/
-├── docker-compose.yaml
-└── README.md
-```
 
 ## Run Locally
 ```bash
@@ -68,7 +58,7 @@ Cross-service calls go through APIs, not shared ORM models.
 
 **Kafka for async processing** — order creation publishes an event to Kafka,
 decoupling the order service from any downstream consumers (notifications,
-inventory updates, etc).
+inventory updates, etc). - **Under Construction** 
 
 **Automated migrations** — Alembic runs on container startup via shell scripts,
 making fresh deployments and CI environments require zero manual steps.
