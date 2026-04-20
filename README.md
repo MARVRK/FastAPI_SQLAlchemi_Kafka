@@ -9,7 +9,7 @@ This project demonstrates a production-style backend architecture
 where services are independently deployable, communicate asynchronously
 via Kafka, and each own their own database schema.
 
-![img.png](C4 Scheme.png)
+![img.png](C4_Scheme.png)
 
 ## Services
 
