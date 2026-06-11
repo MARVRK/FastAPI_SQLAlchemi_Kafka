@@ -1,37 +1,34 @@
-from typing import Annotated, List
+from typing import List
 
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter
 
-from product.infra.base import get_db
-from product.schemas import ProductCreate, ProductUpdate, ProductResponse
-from product.services import product_service
+from product.dependencies.core import ProductServiceDep
+from product.schemas.requests import ProductCreate, ProductUpdate
+from product.schemas.responses import ProductResponse
 
 router = APIRouter(prefix="/product")
 
-DBSessionDP = Annotated[AsyncSession, Depends(get_db)]
-
 
 @router.get("/", response_model=List[ProductResponse])
-async def get_all_products(db: DBSessionDP):
-    return await product_service.get_all_products(db)
+async def get_all_products(service: ProductServiceDep):
+    return await service.get_all_products()
 
 
 @router.get("/{product_id}", response_model=ProductResponse)
-async def get_product(product_id: int, db: DBSessionDP):
-    return await product_service.get_product(product_id, db)
+async def get_product(product_id: int, service: ProductServiceDep):
+    return await service.get_product(product_id)
 
 
 @router.post("/", response_model=ProductResponse, status_code=201)
-async def create_product(data: ProductCreate, db: DBSessionDP):
-    return await product_service.create_product(data, db)
+async def create_product(data: ProductCreate, service: ProductServiceDep):
+    return await service.create_product(data)
 
 
-@router.put("/{product_id}", response_model=ProductResponse)
-async def update_product(product_id: int, data: ProductUpdate, db: DBSessionDP):
-    return await product_service.update_product(product_id, data, db)
+@router.patch("/{product_id}", response_model=ProductResponse)
+async def update_product(product_id: int, data: ProductUpdate, service: ProductServiceDep):
+    return await service.update_product(product_id, data)
 
 
-@router.delete("/{product_id}")
-async def delete_product(product_id: int, db: DBSessionDP):
-    return await product_service.delete_product(product_id, db)
+@router.delete("/{product_id}", status_code=200)
+async def delete_product(product_id: int, service: ProductServiceDep):
+    return await service.delete_product(product_id)

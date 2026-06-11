@@ -10,10 +10,15 @@ app.include_router(router=product_router)
 
 
 @app.exception_handler(ProductError)
-async def product_error_handler(request: Request, exc: ProductError):
-    return JSONResponse(status_code=404, content={"detail": exc.message})
+async def handler_product_error(request: Request, exc: ProductError):
+    return JSONResponse(status_code=404, content={"status": "error", "message": str(exc)})
 
 
 @app.exception_handler(IntegrityError)
-async def integrity_error_handler(request: Request, exc: IntegrityError):
-    return JSONResponse(status_code=409, content={"detail": "Product already exists"})
+async def handler_integrity_error(request: Request, exc: IntegrityError):
+    msg = str(exc.orig)
+    if "product" in msg:
+        message = "product with this name already exists"
+    else:
+        message = "conflict: duplicate value"
+    return JSONResponse(status_code=409, content={"status": "error", "message": message})
