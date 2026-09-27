@@ -12,9 +12,9 @@ from order.infra.base import session_manager
 from order.error.error import OrderError
 from loguru import logger
 
-logger.add(sys.stdout, level="DEBUG", format="<green>{time:HH:mm:ss}</green> | {level} | {message}")
-logger.add("order_repo.log", serialize=True, level="INFO")
-logger.add("errors.log", level="ERROR")
+# logger.add(sys.stdout, level="DEBUG", format="<green>{time:HH:mm:ss}</green> | {level} | {message}")
+# logger.add("order_repo.log", serialize=True, level="INFO")
+# logger.add("errors.log", level="ERROR")
 
 class OrderAbstraction (ABC):
 	@abstractmethod
@@ -32,7 +32,7 @@ class OrderAbstraction (ABC):
 
 class OrderRepository(OrderAbstraction):
 	async def get_order(self, order_number: uuid, db: AsyncSession) -> Order | None:
-		logger.info (f"Getting order_number from DBOrder: {order_number}")
+		# logger.info (f"Getting order_number from DBOrder: {order_number}")
 		if not order_number:
 			return None
 		result = select(Order).options(selectinload(Order.order_items)).where(Order.order_number == order_number)
@@ -44,7 +44,7 @@ class OrderRepository(OrderAbstraction):
 			raise OrderError(message="At least one product should be added")
 
 		try:
-			logger.info (f"Starting updating/creating a new order_number: {order.order_number}")
+			# logger.info (f"Starting updating/creating a new order_number: {order.order_number}")
 			order_stmt = insert(Order).values(order_number=order.order_number,
 			                                  status=order.status,
 			                                  total_price=order.total_price,
@@ -69,12 +69,12 @@ class OrderRepository(OrderAbstraction):
 			await db.execute(data_stmt)
 			return order.order_number
 		except IntegrityError as error:
-			logger.error("Failed to update/create new order")
+			# logger.error("Failed to update/create new order")
 			raise OrderError(f"Failed to save/update order", original_exception=error)
 
 
 	async def delete_order(self, order: Order, db: AsyncSession) -> dict[str, str] | None:
-		logger.info (f"Deleting order from DBOrder: {order.order_number}")
+		# logger.info (f"Deleting order from DBOrder: {order.order_number}")
 		if order is None:
 			return None
 		order_stmt = delete(Order).where(Order.id == order.id)
