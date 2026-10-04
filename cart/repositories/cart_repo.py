@@ -2,95 +2,79 @@ from sqlalchemy import func
 from abc import ABC, abstractmethod
 from cart.error.error import CartError
 from cart.models.cart import Cart, CartDetail
-from cart.infra.base import session_manager
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import selectinload
 from sqlalchemy import delete, select
-from sqlalchemy.exc import IntegrityError
-import asyncio
+from cart.schemas.requests import CartCreateUpdate
+from cart.schemas.responses import CartResponse
 
+CartId = int
 class CartAbstraction (ABC):
 
     @abstractmethod
-    async def get_cart (self, cart_id: int, db: AsyncSession) -> Cart | None:
+    async def get_cart (self, customer_id: int, db: AsyncSession) -> CartResponse:
         pass
 
     @abstractmethod
-    async def save_update_cart (self, cart: Cart, db: AsyncSession | None) -> Cart.id:
+    async def save_update_cart (self, customer_id:int, items: CartCreateUpdate, db: AsyncSession ) -> CartId :
         pass
 
     @abstractmethod
-    async def delete_cart (self, cart_id: int, db: AsyncSession) -> None | dict[str, str]:
+    async def delete_cart (self, customer_id: int, db: AsyncSession) -> bool:
         pass
 
 class CartRepository (CartAbstraction):
-    async def get_cart (self, cart_id: int, db: AsyncSession) -> Cart | None:
+    async def get_cart (self, customer_id: int, db: AsyncSession) -> CartResponse:
         '''
         SQL Request:
-        This is request to table -> Cart
-        SELECT cart_table.id, cart_table.customer_id, cart_table.created_at, cart_table.updated_at
-        WHERE cart_table.id = $1::INTEGER
-
-        This is request to table -> CartDetail
-        SELECT cart_detail_table.cart_id AS cart_detail_table_cart_id,
-               cart_detail_table.id AS cart_detail_table_id,
-               cart_detail_table.created_at AS cart_detail_table_created_at,
-               cart_detail_table.product_id AS cart_detail_table_product_id,
-               cart_detail_table.quantity AS cart_detail_table_quantity
-        FROM cart_detail_table
-        WHERE cart_detail_table.cart_id IN ($1::INTEGER)
+        NOT VALID - NEED TO CHANGE!!!!!!
         '''
-        if not cart_id:
-            return None
-        cart_stmt = select (Cart).options (selectinload (Cart.details)).where (Cart.id == cart_id)
+        if not customer_id:
+            raise CartError ("No customer_id provided")
+
+        cart_stmt = select (Cart).options(selectinload(Cart.details)).where(Cart.customer_id == customer_id)
         cart = await db.execute (cart_stmt)
         return cart.scalar_one_or_none ()
 
-    async def save_update_cart (self, cart: Cart, db: AsyncSession) -> Cart.id:
+
+    async def delete_cart (self, customer_id: int ,db: AsyncSession) -> bool:
         '''
         SQL Request:
-        This is request to table -> Cart
-        INSERT INTO cart_table (customer_id, updated_at) VALUES ($1::INTEGER, now()) ON CONFLICT ON CONSTRAINT cart_table_unique_customer_id DO
-        UPDATE SET updated_at = now() RETURNING cart_table.id
-        ON CONFLICT ON CONSTRAINT cart_table_unique_customer_id
-        DO UPDATE SET updated_at = now() RETURNING cart_table.id
-
-        This is request to table -> CartDetail
-        INSERT INTO cart_detail_table (cart_id, product_id, quantity) VALUES ($1::INTEGER, $2::INTEGER, $3::INTEGER)
-        ON CONFLICT ON CONSTRAINT cart_detail_cart_product_id DO UPDATE SET quantity = $4::INTEGER
-        RETURNING cart_detail_table.id
+        NOT VALID - NEED TO CHANGE!!!!!!
         '''
 
-        if not cart.details:
-            raise CartError ("At least one product should be added")
-        try:
-            cart_stmt = insert (Cart).values (customer_id=cart.customer_id, updated_at=cart.updated_at)
-            cart_stmt = (
-                cart_stmt.on_conflict_do_update (constraint="cart_table_unique_customer_id", set_=dict (updated_at=func.now ())).returning (Cart.id))
-            result = await db.execute (cart_stmt)
-            # getting id of updated or new created card.id
-            card_id_form_result = result.scalar_one ()
+        if not customer_id:
+            raise CartError ("No customer_id provided")
 
-            # creating list of data from cart.details
-            card_details = [{"cart_id": card_id_form_result, "product_id": d.product_id, "quantity": d.quantity} for d in cart.details]
-            # push one bulk insert on DB by one execution
-            data_stmt = insert (CartDetail).values (card_details)
-            data_stmt = data_stmt.on_conflict_do_update (constraint="cart_detail_cart_product_id", set_=dict (quantity=data_stmt.excluded.quantity))
-            await db.execute (data_stmt)
+        cart_stmt = delete (Cart).where (Cart.customer_id == customer_id)
+        deleted_cart = await db.execute (cart_stmt)
+        return deleted_cart.rowcount > 0
 
-            return card_id_form_result
-        except IntegrityError as error:
-            raise CartError (f"Failed to save/update cart", original_exception=error)
-
-    async def delete_cart (self, cart: Cart, db: AsyncSession) -> None | dict[str, str]:
+    async def save_update_cart (self, customer_id: int, items: CartCreateUpdate, db: AsyncSession) -> CartId:
         '''
         SQL Request:
-        DELETE FROM cart_table WHERE cart_table.id = $1::INTEGER
-        Cascade delete method was enabled in models.cart
+        NOT VALID - NEED TO CHANGE!!!!!!
         '''
-        if cart is None:
-            return None
-        cart_stmt = delete (Cart).where (Cart.id == cart.id)
-        await db.execute (cart_stmt)
-        return {"DB_CART": f"Cart with id {cart.id} was deleted from DB"}
+
+        if not customer_id:
+            raise CartError ("No customer_id provided")
+
+        #updating/creating a new Сart
+        cart_stmt = insert (Cart).values (customer_id = customer_id, updated_at = func.now())
+        cart_stmt = cart_stmt.on_conflict_do_update(constraint="cart_table_unique_customer_id",
+                                                    set_=dict(updated_at=func.now())).returning(Cart.id)
+        get_cart_id = await db.execute (cart_stmt)
+        cart_id = get_cart_id.scalar_one()
+
+        #delete old CartDetails with items
+        delete_old_items = delete(CartDetail).where(CartDetail.cart_id == cart_id)
+        await db.execute(delete_old_items)
+
+        #creating new CartDetails with new values
+        cart_details = [{"cart_id": cart_id, "product_id": item.product_id, "quantity": item.quantity} for item in items]
+        cart_detail_stmt = insert(CartDetail).values(cart_details)
+        await db.execute(cart_detail_stmt)
+
+        return cart_id
+

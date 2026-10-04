@@ -2,7 +2,6 @@ import jwt
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
-
 from user.api.user import router as user_router
 from user.error.error import UserError, AuthError
 

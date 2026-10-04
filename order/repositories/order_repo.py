@@ -1,5 +1,4 @@
-import asyncio
-import sys
+
 import uuid
 from abc import ABC, abstractmethod
 from order.models.order import Order, ProductsInOrder
@@ -8,7 +7,7 @@ from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.dialects.postgresql import insert
-from order.infra.base import session_manager
+
 from order.error.error import OrderError
 from loguru import logger
 
