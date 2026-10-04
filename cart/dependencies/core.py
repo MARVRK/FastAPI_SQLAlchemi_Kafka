@@ -9,4 +9,4 @@ def get_cart_service (db: AsyncSession = Depends (get_db)) -> CartService:
     cart_repo = CartRepository ()
     return CartService (repo=cart_repo, db=db)
 
-CartServiceDep = Annotated[AsyncSession, Depends (get_cart_service)]
+CartServiceDep = Annotated[CartService, Depends (get_cart_service)]

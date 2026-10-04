@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import selectinload
 from sqlalchemy import delete, select
-from cart.schemas.requests import CartCreateUpdate
+from cart.schemas.requests import CartProduct
 from cart.schemas.responses import CartResponse
 
 CartId = int
@@ -17,7 +17,7 @@ class CartAbstraction (ABC):
         pass
 
     @abstractmethod
-    async def save_update_cart (self, customer_id:int, items: CartCreateUpdate, db: AsyncSession ) -> CartId :
+    async def save_update_cart (self, customer_id:int, items: list[CartProduct], db: AsyncSession ) -> CartId :
         pass
 
     @abstractmethod
@@ -51,7 +51,7 @@ class CartRepository (CartAbstraction):
         deleted_cart = await db.execute (cart_stmt)
         return deleted_cart.rowcount > 0
 
-    async def save_update_cart (self, customer_id: int, items: CartCreateUpdate, db: AsyncSession) -> CartId:
+    async def save_update_cart (self, customer_id: int, items: list[CartProduct], db: AsyncSession) -> CartId:
         '''
         SQL Request:
         NOT VALID - NEED TO CHANGE!!!!!!
