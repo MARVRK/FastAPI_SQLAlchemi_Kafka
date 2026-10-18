@@ -1,7 +1,7 @@
 import uuid
 from typing import List
-from order.domain.enums import OrderStatus, get_statuses
 from decimal import Decimal
+from order.domain.enums import OrderStatus, get_statuses
 from sqlalchemy import Integer, UUID, ForeignKey, DECIMAL, Enum
 from order.infra.base import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship

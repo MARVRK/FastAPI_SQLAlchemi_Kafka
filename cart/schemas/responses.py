@@ -1,4 +1,4 @@
-from pydantic import BaseModel,ConfigDict
+from pydantic import BaseModel,ConfigDict, model_validator
 
 class Item(BaseModel):
     product_id: int
