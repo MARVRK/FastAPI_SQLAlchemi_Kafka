@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from order.models.order import Order, ProductsInOrder
 from sqlalchemy.ext.asyncio import AsyncSession
 from order.domain.entities import PlacedOrder
-from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.dialects.postgresql import insert
 
@@ -17,19 +16,19 @@ from loguru import logger
 class OrderAbstraction (ABC):
 
     @abstractmethod
-    async def create_order (self, new_order: PlacedOrder, db: AsyncSession) -> Order.id | None:
+    async def create_order (self, new_order: PlacedOrder, db: AsyncSession) -> PlacedOrder:
         pass
 
     @abstractmethod
-    async def cancel_order (self, user_id: Order, order_uuid: UUID, db: AsyncSession) -> PlacedOrder | None:
+    async def cancel_order (self, user_id: int, order_number: UUID, db: AsyncSession) -> PlacedOrder | None:
         pass
 
     @abstractmethod
-    async def get_one_order (self, user_id: int, order_uuid: UUID, db: AsyncSession) -> PlacedOrder | None:
+    async def get_one_order (self, user_id: int, order_number: UUID, db: AsyncSession) -> PlacedOrder | None:
         pass
 
     @abstractmethod
-    async def get_orders (self, user_id: int, db: AsyncSession) -> list[PlacedOrder] | []:
+    async def get_orders (self, user_id: int, db: AsyncSession) -> list[PlacedOrder]:
         pass
 
 # class OrderRepository (OrderAbstraction):
