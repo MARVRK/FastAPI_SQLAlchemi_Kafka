@@ -11,7 +11,7 @@ class Base(DeclarativeBase):
 class DBSessionConfig:
     def __init__(self, db_url: str):
         if not db_url:
-            raise ValueError("DB URL was not provided")
+            raise ValueError("DB_Products URL was not provided")
         self._engine = create_async_engine(url=db_url, echo=False)
         self._sessionmaker = async_sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
 
