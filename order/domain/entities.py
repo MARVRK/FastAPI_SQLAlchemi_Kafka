@@ -17,3 +17,8 @@ class PlacedOrder:
     order_number: UUID
     status: OrderStatus
     items: tuple[ProductsFromOrder,...]
+
+@dataclass(frozen=True)
+class CartItem:
+    product_id: int
+    quantity: int

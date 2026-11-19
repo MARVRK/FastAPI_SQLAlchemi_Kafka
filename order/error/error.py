@@ -1,9 +1,15 @@
-class OrderError(Exception):
-    def __init__(self, message, original_exception = None):
-        self.message = message
-        self.original_exception = original_exception
-        super().__init__(message)
-    def __str__(self):
-        if self.original_exception:
-            return f"(DB_ORDER_ERROR: {self.message}) caused by {self.original_exception}"
-        return f"(DB_ORDER_ERROR: {self.message})"
+class ServiceUnavailable(Exception):
+    code = "SERVICE_UNAVAILABLE"
+    def __init__(self, service):
+        self.service = service
+        self.message = f"{self.service} service unavailable"
+        super().__init__(self.message)
+
+class CartUnavailable(ServiceUnavailable):
+    def __init__(self):
+        super().__init__(service="cart")
+
+
+class ProductUnavailable(ServiceUnavailable):
+    def __init__(self):
+        super().__init__(service="product")
